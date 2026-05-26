@@ -43,9 +43,18 @@ function fmtNum(n) {
     if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
     return String(n);
 }
-function fmtDist(d) {
-    if (d >= 1000) return (d / 1000).toFixed(1) + 'K';
-    return Math.round(d).toString();
+// Mouse distance: px → m → km (matches macOS baseMetersPerPixel = 0.000264583)
+const M_PER_PX = 0.000264583;
+function fmtMouseDist(px) {
+    let m = px * M_PER_PX;
+    if (m >= 1000) return (m / 1000).toFixed(2) + ' km';
+    if (px >= 1000) return m.toFixed(1) + ' m';
+    return Math.round(px) + ' px';
+}
+// Scroll distance: px → kPx (matches macOS)
+function fmtScrollDist(px) {
+    if (px >= 10000) return (px / 1000).toFixed(1) + ' kPx';
+    return Math.round(px) + ' px';
 }
 
 /* ── Widget builders ────────────────────────────────── */
@@ -228,8 +237,8 @@ export default class KeyStatsExtension extends Extension {
             }
 
             this._distRow.destroy_all_children();
-            this._distRow.add_child(distCard(_('Mouse Dist'), md, fmtDist));
-            this._distRow.add_child(distCard(_('Scroll Dist'), sd, fmtDist));
+            this._distRow.add_child(distCard(_('Mouse Dist'), md, fmtMouseDist));
+            this._distRow.add_child(distCard(_('Scroll Dist'), sd, fmtScrollDist));
 
             this._fetchHistory();
             this._fetchKeyBreakdown();
