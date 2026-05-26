@@ -66,12 +66,14 @@ impl StatsManager {
         }
     }
 
-    pub fn record_key_press(&mut self, key_name: &str) {
+    pub fn record_key_press(&mut self, key_name: &str, track_breakdown: bool) {
         self.check_midnight();
         self.stats.key_presses += 1;
         self.kps_tracker.record();
         self.update_peaks();
-        db::schema::incr_key_count(&self.db, &self.today, key_name).ok();
+        if track_breakdown {
+            db::schema::incr_key_count(&self.db, &self.today, key_name).ok();
+        }
         self.maybe_flush();
     }
 
@@ -216,8 +218,8 @@ mod tests {
     #[test]
     fn key_press_increments_count() {
         let mut mgr = test_mgr();
-        mgr.record_key_press("A");
-        mgr.record_key_press("B");
+        mgr.record_key_press("A", true);
+        mgr.record_key_press("B", true);
         assert_eq!(mgr.snapshot().key_presses, 2);
     }
 
@@ -249,7 +251,7 @@ mod tests {
     #[test]
     fn reset_clears_today() {
         let mut mgr = test_mgr();
-        mgr.record_key_press("A");
+        mgr.record_key_press("A", true);
         mgr.record_click("left");
         mgr.reset_today();
         assert_eq!(mgr.snapshot().key_presses, 0);
@@ -269,8 +271,8 @@ mod tests {
     #[test]
     fn import_merge_adds_stats() {
         let mut mgr = test_mgr();
-        mgr.record_key_press("A");
-        mgr.record_key_press("B");
+        mgr.record_key_press("A", true);
+        mgr.record_key_press("B", true);
         let json = r#"{"version":1,"exported_at":"2026-05-26T00:00:00","today":{"date":"2026-05-26","key_presses":10,"left_clicks":5,"middle_clicks":0,"right_clicks":3,"side_back_clicks":0,"side_forward_clicks":0,"mouse_distance":0.0,"scroll_distance":0.0,"peak_kps":0,"peak_cps":0,"updated_at":"2026-05-26T00:00:00"},"history":[]}"#;
         mgr.import_data(json, keystats_core::ImportMode::Merge)
             .unwrap();
