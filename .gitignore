@@ -41,5 +41,8 @@ fastlane/test_output
 *.xcarchive
 .entire/logs/entire.log
 
+# Rust
+KeyStats.Linux/target/
+
 # Claude
 .claude/settings.json

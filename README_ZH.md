@@ -6,7 +6,7 @@
 <img width="128" height="128" alt="ICON-iOS-Default-256x256@2x" src="https://github.com/user-attachments/assets/842780ed-c7a1-4c1b-a901-1f1d8babe51a" />
 
 
-# KeyStats - macOS/Windows 键鼠统计菜单栏应用
+# KeyStats - macOS / Windows / Linux 键鼠统计应用
 
 
 KeyStats可以统计用户每日的键盘敲击次数、鼠标点击次数、鼠标移动距离和滚动距离。
@@ -53,6 +53,48 @@ scoop install keystats
 #### 方式二：[从 GitHub Release 下载](https://github.com/debugtheworldbot/keyStats/releases) Windows 版本安装包
 
 > **无需安装任何依赖**：Windows 版本使用 .NET Framework 4.8，Windows 10 (1903+) 和 Windows 11 已预装，开箱即用。如果你的 Windows 10 版本较旧（早于 1903），可以升级系统或[手动安装 .NET Framework 4.8](https://dotnet.microsoft.com/download/dotnet-framework/net48)。
+
+### Linux (GNOME)
+
+**前提条件：** GNOME Shell 45+，`input` 组权限（或使用 `sudo` 设置）。
+
+```bash
+# 1. 将用户加入 input 组（一次性设置）
+sudo usermod -aG input $USER
+newgrp input
+
+# 2. 下载最新版本
+curl -L https://github.com/debugtheworldbot/KeyStats/releases/latest/download/keystats-linux-x86_64.tar.gz | tar xz
+
+# 3. 安装二进制文件
+mkdir -p ~/.local/bin
+cp keystats-daemon keystatsctl ~/.local/bin/
+
+# 4. 安装 systemd 用户服务
+mkdir -p ~/.config/systemd/user
+cp keystats.service ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now keystats.service
+
+# 5. 安装 GNOME 扩展
+gnome-extensions install keystats@debugtheworldbot.github.io.zip
+# 然后重启 GNOME Shell：Alt+F2 → r → Enter
+# 启用扩展：gnome-extensions enable keystats@debugtheworldbot.github.io
+
+# 验证
+keystatsctl doctor
+```
+
+**卸载：**
+```bash
+systemctl --user disable --now keystats.service
+rm ~/.config/systemd/user/keystats.service
+rm ~/.local/bin/keystats-daemon ~/.local/bin/keystatsctl
+gnome-extensions uninstall keystats@debugtheworldbot.github.io
+rm -rf ~/.local/state/keystats/
+```
+
+> **注意：** Linux 版目前处于 Beta 阶段。支持 GNOME 45+（Ubuntu/Fedora）。暂不支持按应用统计。从源码构建请参考 [Linux 开发文档](KeyStats.Linux/packaging/README_ZH.md)。
 
 ## 功能特性
 

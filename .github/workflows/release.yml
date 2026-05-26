@@ -177,10 +177,58 @@ jobs:
           path: KeyStats.Windows/dist/*.zip
 
   # ============================================================
+  # Linux Build
+  # ============================================================
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [x86_64-unknown-linux-gnu]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build
+        run: |
+          cd KeyStats.Linux
+          cargo build --release -p keystats-daemon -p keystatsctl
+
+      - name: Test
+        run: |
+          cd KeyStats.Linux
+          cargo test --workspace
+
+      - name: Lint
+        run: |
+          cd KeyStats.Linux
+          cargo clippy --workspace --all-targets -- -D warnings
+          cargo fmt --all --check
+
+      - name: Package tarball
+        run: |
+          cd KeyStats.Linux
+          mkdir -p dist
+          cp target/release/keystats-daemon dist/
+          cp target/release/keystatsctl dist/
+          cp packaging/systemd/keystats.service dist/
+          cp packaging/udev/60-keystats-input.rules dist/
+          cd dist
+          tar -czf ../keystats-linux-x86_64.tar.gz *
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-tarball
+          path: KeyStats.Linux/keystats-linux-x86_64.tar.gz
+
+  # ============================================================
   # Create Release
   # ============================================================
   create-release:
-    needs: [build-macos, build-windows]
+    needs: [build-macos, build-windows, build-linux]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -198,10 +246,17 @@ jobs:
           name: windows-zip
           path: release-assets/windows
 
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-tarball
+          path: release-assets/linux
+
       - name: List artifacts
         run: |
           ls -la release-assets/macos
           ls -la release-assets/windows
+          ls -la release-assets/linux
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -211,6 +266,7 @@ jobs:
             release-assets/macos/KeyStats.zip
             release-assets/macos/appcast.xml
             release-assets/windows/*.zip
+            release-assets/linux/*.tar.gz
           generate_release_notes: true
           prerelease: ${{ contains(github.ref_name, '-beta') }}
           make_latest: ${{ contains(github.ref_name, '-beta') && 'false' || 'true' }}

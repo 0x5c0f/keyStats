@@ -1,0 +1,10 @@
+{
+  "name": "KeyStats",
+  "description": "Privacy-first keyboard and mouse statistics in your GNOME top bar",
+  "uuid": "keystats@debugtheworldbot.github.io",
+  "shell-version": ["45", "46", "47", "48"],
+  "url": "https://github.com/debugtheworldbot/KeyStats",
+  "gettext-domain": "keystats",
+  "settings-schema": "org.gnome.shell.extensions.keystats",
+  "version": 1
+}

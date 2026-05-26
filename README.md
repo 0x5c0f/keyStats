@@ -5,9 +5,9 @@ English | [简体中文](./README_ZH.md)
 <img width="128" height="128" alt="ICON-iOS-Default-256x256@2x" src="https://github.com/user-attachments/assets/842780ed-c7a1-4c1b-a901-1f1d8babe51a" />
 
 
-# KeyStats - macOS/Windows Keyboard & Mouse Statistics Menu Bar App
+# KeyStats - macOS / Windows / Linux Keyboard & Mouse Statistics App
 
-KeyStats is a lightweight native menu bar application for macOS and Windows that tracks daily keyboard keystrokes, mouse clicks, mouse movement distance, and scroll distance.
+KeyStats is a lightweight native application for macOS, Windows, and Linux that tracks daily keyboard keystrokes, mouse clicks, mouse movement distance, and scroll distance.
 
 <img width="305" height="632" alt="image" src="https://github.com/user-attachments/assets/85c0b483-ad4a-458c-8bf4-c4f054b951bb" />
 
@@ -47,6 +47,48 @@ scoop install keystats
 #### Option 2: [Download from GitHub Releases](https://github.com/debugtheworldbot/keyStats/releases)
 
 > **No dependencies required**: The Windows version uses .NET Framework 4.8, which is pre-installed on Windows 10 (1903+) and Windows 11 - ready to use out of the box. If your Windows 10 version is older (before 1903), you can upgrade your system or [manually install .NET Framework 4.8](https://dotnet.microsoft.com/download/dotnet-framework/net48).
+
+### Linux (GNOME)
+
+**Requirements:** GNOME Shell 45+, `input` group membership (or `sudo` for setup).
+
+```bash
+# 1. Add yourself to the input group (one-time setup)
+sudo usermod -aG input $USER
+newgrp input
+
+# 2. Download and extract the latest release
+curl -L https://github.com/debugtheworldbot/KeyStats/releases/latest/download/keystats-linux-x86_64.tar.gz | tar xz
+
+# 3. Install binaries
+mkdir -p ~/.local/bin
+cp keystats-daemon keystatsctl ~/.local/bin/
+
+# 4. Install systemd user service
+mkdir -p ~/.config/systemd/user
+cp keystats.service ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now keystats.service
+
+# 5. Install GNOME extension
+gnome-extensions install keystats@debugtheworldbot.github.io.zip
+# Then restart GNOME Shell: Alt+F2 → r → Enter
+# Enable via: gnome-extensions enable keystats@debugtheworldbot.github.io
+
+# Verify
+keystatsctl doctor
+```
+
+**Uninstall:**
+```bash
+systemctl --user disable --now keystats.service
+rm ~/.config/systemd/user/keystats.service
+rm ~/.local/bin/keystats-daemon ~/.local/bin/keystatsctl
+gnome-extensions uninstall keystats@debugtheworldbot.github.io
+rm -rf ~/.local/state/keystats/
+```
+
+> **Note:** Linux is in beta. Currently supports GNOME 45+ on Ubuntu/Fedora. App-by-app stats are not yet available on Linux. See [Linux development docs](KeyStats.Linux/packaging/README.md) for build-from-source instructions.
 
 ## Features
 
