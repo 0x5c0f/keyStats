@@ -99,6 +99,10 @@ fn process_device(device: &mut InputDevice, stats: &mut StatsManager) -> usize {
     count
 }
 
+/// Re-scan input devices every 30 seconds to handle hotplug (USB/BT reconnect,
+/// suspend/resume, etc.) so that stale file descriptors are replaced.
+const RESCAN_INTERVAL: Duration = Duration::from_secs(30);
+
 /// Run the main input event loop. Blocks the current thread.
 /// Reads from all discovered devices in non-blocking mode,
 /// calling StatsManager for each processed event.
@@ -119,6 +123,7 @@ pub fn run(stats: Arc<Mutex<StatsManager>>) -> ! {
     );
 
     let poll_interval = Duration::from_millis(8); // ~125 Hz
+    let mut last_rescan = std::time::Instant::now();
 
     loop {
         let mut total = 0usize;
@@ -127,6 +132,20 @@ pub fn run(stats: Arc<Mutex<StatsManager>>) -> ! {
             for device in &mut devices {
                 total += process_device(device, &mut mgr);
             }
+        }
+
+        // Periodic device re-scan for hotplug
+        if last_rescan.elapsed() >= RESCAN_INTERVAL {
+            let (new_devices, _) = InputDevice::discover();
+            if new_devices.len() != devices.len() {
+                tracing::info!(
+                    "Device count changed: {} -> {} (reload)",
+                    devices.len(),
+                    new_devices.len()
+                );
+            }
+            devices = new_devices;
+            last_rescan = std::time::Instant::now();
         }
 
         if total > 0 {
