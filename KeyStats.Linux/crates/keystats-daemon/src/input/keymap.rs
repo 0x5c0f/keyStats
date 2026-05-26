@@ -123,36 +123,6 @@ pub fn key_name(code: u16) -> String {
 }
 
 /// Identify the button role for mouse button codes.
-/// Filter out modifier/meta keys that should not appear in key breakdown.
-pub fn is_breakdown_key(code: u16) -> bool {
-    !matches!(
-        code,
-        29 | 97 | 42 | 54 | 56 | 100 | 125 | 126 | 58 | 69 | 70
-    )
-}
-
-#[cfg(test)]
-mod breakdown_tests {
-    use super::*;
-    #[test]
-    fn modifiers_are_excluded() {
-        assert!(!is_breakdown_key(42)); // LeftShift
-        assert!(!is_breakdown_key(29)); // LeftControl
-        assert!(!is_breakdown_key(56)); // LeftAlt
-        assert!(!is_breakdown_key(125)); // LeftMeta
-        assert!(!is_breakdown_key(58)); // CapsLock
-        assert!(!is_breakdown_key(69)); // NumLock
-    }
-    #[test]
-    fn regular_keys_are_included() {
-        assert!(is_breakdown_key(30)); // A
-        assert!(is_breakdown_key(57)); // Space
-        assert!(is_breakdown_key(28)); // Enter
-        assert!(is_breakdown_key(14)); // Backspace
-        assert!(is_breakdown_key(59)); // F1
-    }
-}
-
 pub fn button_role(code: u16) -> Option<&'static str> {
     match code {
         0x110 => Some("left"),         // BTN_LEFT

@@ -36,9 +36,7 @@ fn process_device(device: &mut InputDevice, stats: &mut StatsManager) -> usize {
                             match device.kind {
                                 DeviceKind::Keyboard | DeviceKind::KeyboardPointer => {
                                     let name = keymap::key_name(code_u16);
-                                    // All keys count toward total; only non-modifiers in breakdown
-                                    let track = keymap::is_breakdown_key(code_u16);
-                                    stats.record_key_press(&name, track);
+                                    stats.record_key_press(&name, true);
                                 }
                                 DeviceKind::Pointer | DeviceKind::Other => {
                                     // Non-button key on a pointer — ignore
