@@ -117,6 +117,11 @@ rm -rf ~/.local/state/keystats/
 - **无需安装任何依赖**：使用 .NET Framework 4.8（Windows 10/11 已预装，开箱即用）
 - **应用大小**：约 5-10 MB（轻量级，无需额外运行时）
 
+### Linux
+- **GNOME Shell 45+**（Ubuntu 24.04+、Fedora 40+）
+- **input 组** 权限（见权限设置）
+- **无桌面环境依赖**：使用 evdev（内核接口）+ Rust
+
 > **注意**：如果你的 Windows 10 版本较旧（早于 1903），可以：
 > 1. 升级到 Windows 10 1903 或更高版本（推荐）
 > 2. 或手动安装 .NET Framework 4.8：[下载链接](https://dotnet.microsoft.com/download/dotnet-framework/net48)
@@ -145,6 +150,21 @@ KeyStats 需要**辅助功能权限**才能监听键盘和鼠标事件。首次�
 Windows 版本**无需额外权限设置**，应用启动后会自动开始统计。
 
 > **注意**：首次启动时，Windows 可能会弹出安全警告，点击"仍要运行"即可。
+
+### Linux
+
+KeyStats 通过 `/dev/input/event*` 读取输入事件，需要 `input` 组成员权限：
+
+```bash
+# 一次性设置
+sudo usermod -aG input $USER
+# 注销重新登录，或执行：newgrp input
+
+# 验证
+keystatsctl doctor
+```
+
+> **注意**：如果 `keystatsctl doctor` 显示设备被阻止，说明权限未生效。详见[权限配置](KeyStats.Linux/packaging/README_ZH.md#权限配置)。
 
 ## 使用说明
 
@@ -241,6 +261,31 @@ KeyStats.Windows/
 └── build.ps1                       # 构建脚本
 ```
 
+### Linux
+
+```
+KeyStats.Linux/
+├── Cargo.toml                      # Rust workspace
+├── crates/
+│   ├── keystats-core/              # 共享模型、格式化、导入导出
+│   ├── keystats-daemon/            # evdev 事件循环、SQLite、D-Bus 服务
+│   └── keystatsctl/                # CLI：status、doctor
+├── packaging/
+│   ├── systemd/keystats.service    # systemd 用户服务单元
+│   ├── udev/                       # udev 规则（可选）
+│   ├── README.md                   # 打包文档（英文）
+│   └── README_ZH.md                # 打包文档（中文）
+└── target/                         # 构建输出 (gitignored)
+
+KeyStats.GNOME/
+└── keystats@debugtheworldbot.github.io/
+    ├── extension.js                # 面板 + 弹窗 UI（GNOME Shell 扩展）
+    ├── prefs.js                    # 首选项窗口 (Adw)
+    ├── stylesheet.css              # 深色/浅色双主题样式
+    ├── metadata.json               # 扩展元数据
+    └── schemas/                    # GSettings 配置方案
+```
+
 ## 技术实现
 
 ### macOS
@@ -260,6 +305,17 @@ KeyStats.Windows/
 - **数据存储**：使用 JSON 文件进行本地持久化
 - **UI 模式**：系统托盘应用
 - **优势**：无需安装运行时，Windows 10/11 开箱即用，应用体积小（5-10 MB）
+
+### Linux
+
+- **语言**：Rust
+- **框架**：evdev（内核输入）、zbus（D-Bus）、rusqlite（SQLite）
+- **事件监听**：通过 `evdev` crate 读取 `/dev/input/event*`，非阻塞事件循环
+- **数据存储**：SQLite（`rusqlite`），存储在 `~/.local/state/keystats/`
+- **守护进程**：systemd 用户服务（`keystats.service`）
+- **扩展**：GNOME Shell 扩展（GJS ES modules），D-Bus 客户端
+- **UI 模式**：GNOME 顶栏指示器 + 弹出面板
+- **CLI 工具**：`keystatsctl` 用于状态查看、设备诊断和守护进程控制
 
 
 ## 测试（AppStats）

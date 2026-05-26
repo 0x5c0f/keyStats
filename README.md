@@ -111,6 +111,11 @@ rm -rf ~/.local/state/keystats/
 - **No dependencies required**: Uses .NET Framework 4.8 (pre-installed on Windows 10/11, ready to use out of the box)
 - **App size**: ~5-10 MB (lightweight, no additional runtime needed)
 
+### Linux
+- **GNOME Shell 45+** (Ubuntu 24.04+, Fedora 40+)
+- **input group** membership required (see Permission Setup)
+- **No desktop environment dependencies**: uses evdev (kernel interface) + Rust
+
 > **Note**: If your Windows 10 version is older (before 1903), you can:
 > 1. Upgrade to Windows 10 1903 or higher (recommended)
 > 2. Or manually install .NET Framework 4.8: [Download link](https://dotnet.microsoft.com/download/dotnet-framework/net48)
@@ -139,6 +144,21 @@ KeyStats requires **Accessibility permissions** to monitor keyboard and mouse ev
 The Windows version **requires no additional permission setup**. The app will automatically start tracking once launched.
 
 > **Note**: On first launch, Windows may show a security warning. Click "Run anyway" to proceed.
+
+### Linux
+
+KeyStats reads input events via `/dev/input/event*`, which requires `input` group membership:
+
+```bash
+# One-time setup
+sudo usermod -aG input $USER
+# Log out and back in, or run: newgrp input
+
+# Verify
+keystatsctl doctor
+```
+
+> **Note**: If `keystatsctl doctor` shows blocked devices, you don't have permission yet. See [Permissions](KeyStats.Linux/packaging/README.md#permissions) for details and a udev fallback.
 
 ## Usage Instructions
 
@@ -235,6 +255,31 @@ KeyStats.Windows/
 └── build.ps1                       # Build script
 ```
 
+### Linux
+
+```
+KeyStats.Linux/
+├── Cargo.toml                      # Rust workspace
+├── crates/
+│   ├── keystats-core/              # Shared models, formatting, import/export
+│   ├── keystats-daemon/            # evdev event loop, SQLite, D-Bus service
+│   └── keystatsctl/                # CLI: status, doctor
+├── packaging/
+│   ├── systemd/keystats.service    # systemd user service unit
+│   ├── udev/                       # udev rules (optional)
+│   ├── README.md                   # Packaging docs (EN)
+│   └── README_ZH.md                # Packaging docs (ZH)
+└── target/                         # Build output (gitignored)
+
+KeyStats.GNOME/
+└── keystats@debugtheworldbot.github.io/
+    ├── extension.js                # Panel + popup UI (GNOME Shell extension)
+    ├── prefs.js                    # Preferences window (Adw)
+    ├── stylesheet.css              # Dual-theme dark/light styles
+    ├── metadata.json               # Extension metadata
+    └── schemas/                    # GSettings schema
+```
+
 ## Technical Implementation
 
 ### macOS
@@ -254,6 +299,17 @@ KeyStats.Windows/
 - **Data Storage**: Local persistence using JSON files
 - **UI Mode**: System tray application
 - **Advantages**: No runtime installation required, ready to use on Windows 10/11 out of the box, small app size (5-10 MB)
+
+### Linux
+
+- **Language**: Rust
+- **Frameworks**: evdev (kernel input), zbus (D-Bus), rusqlite (SQLite)
+- **Event Monitoring**: Reads `/dev/input/event*` via `evdev` crate, non-blocking event loop
+- **Data Storage**: SQLite via `rusqlite` in `~/.local/state/keystats/`
+- **Daemon**: systemd user service (`keystats.service`)
+- **Extension**: GNOME Shell extension (GJS ES modules), D-Bus client
+- **UI Mode**: GNOME top bar indicator + popup panel
+- **CLI**: `keystatsctl` for status, device diagnostics, and daemon control
 
 
 ## Testing (AppStats)
